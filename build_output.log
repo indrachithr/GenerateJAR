@@ -1,0 +1,12 @@
+Running JavaCodeToJarService with C:\Users\z044826\Downloads\FactorialCalculator.java 
+[LOG] JavaCodeToJarService.main called
+[LOG] Argument received: C:\Users\z044826\Downloads\FactorialCalculator.java
+[LOG] Valid .java file detected. Calling buildJarFromJavaFile.
+[LOG] buildJarFromJavaFile called with path: C:\Users\z044826\Downloads\FactorialCalculator.java
+[LOG1] buildJarFromJavaFile called with path: C:\Users\z044826\Downloads\FactorialCalculator.java
+[LOG2] Using parentDir: C:\Users\z044826\Downloads
+[LOG] Compilation successful: FactorialCalculator.class
+[LOG] JAR created: FactorialCalculator.jar
+[LOG] ZIP created: FactorialCalculator.zip
+[LOG] Result: FactorialCalculator.jar
+FactorialCalculator.jar
