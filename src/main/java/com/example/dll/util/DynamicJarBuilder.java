@@ -52,15 +52,24 @@ public class DynamicJarBuilder {
                     target.closeEntry();
                 }
                 System.out.println("[LOG] JAR created: " + jarFileName);
+                // Save the JAR file to a fixed output directory (e.g., user's home directory)
+                String userHome = System.getProperty("user.home");
+                String outputDir = userHome + File.separator + "GeneratedJars";
+                java.io.File outDirFile = new java.io.File(outputDir);
+                if (!outDirFile.exists()) outDirFile.mkdirs();
+                String jarOutputPath = outputDir + File.separator + jarFileName;
+                Files.move(Paths.get(jarFileName), Paths.get(jarOutputPath), StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[LOG] JAR saved to: " + jarOutputPath);
                 // Clean up .class file after packaging
                 Files.deleteIfExists(Paths.get(classFilePath));
-                // Add .jar file to a zip archive
+                // Add .jar file to a zip archive in the same output directory
                 String zipFileName = className + ".zip";
-                try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFileName))) {
+                String zipOutputPath = outputDir + File.separator + zipFileName;
+                try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipOutputPath))) {
                     // Add .jar file
                     java.util.zip.ZipEntry jarEntry = new java.util.zip.ZipEntry(jarFileName);
                     zipOut.putNextEntry(jarEntry);
-                    byte[] jarBytes = Files.readAllBytes(Paths.get(jarFileName));
+                    byte[] jarBytes = Files.readAllBytes(Paths.get(jarOutputPath));
                     zipOut.write(jarBytes, 0, jarBytes.length);
                     zipOut.closeEntry();
                     // Add .java file for reference
@@ -69,8 +78,8 @@ public class DynamicJarBuilder {
                     zipOut.write(Files.readAllBytes(file.toPath()));
                     zipOut.closeEntry();
                 }
-                System.out.println("[LOG] ZIP created: " + zipFileName);
-                return jarFileName;
+                System.out.println("[LOG] ZIP created: " + zipOutputPath);
+                return jarOutputPath;
             } else {
                 // Compilation failed, try to fix filename and format code
                 String originalCode = new String(Files.readAllBytes(file.toPath()));
@@ -122,12 +131,21 @@ public class DynamicJarBuilder {
                     target.closeEntry();
                 }
                 System.out.println("[LOG] JAR created: " + jarFileName);
+                // Save the JAR file to a fixed output directory (e.g., user's home directory)
+                String userHome = System.getProperty("user.home");
+                String outputDir = userHome + File.separator + "GeneratedJars";
+                java.io.File outDirFile = new java.io.File(outputDir);
+                if (!outDirFile.exists()) outDirFile.mkdirs();
+                String jarOutputPath = outputDir + File.separator + jarFileName;
+                Files.move(Paths.get(jarFileName), Paths.get(jarOutputPath), StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[LOG] JAR saved to: " + jarOutputPath);
                 Files.deleteIfExists(Paths.get(classFilePath));
                 String zipFileName = className + ".zip";
-                try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFileName))) {
+                String zipOutputPath = outputDir + File.separator + zipFileName;
+                try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipOutputPath))) {
                     java.util.zip.ZipEntry jarEntry = new java.util.zip.ZipEntry(jarFileName);
                     zipOut.putNextEntry(jarEntry);
-                    byte[] jarBytes = Files.readAllBytes(Paths.get(jarFileName));
+                    byte[] jarBytes = Files.readAllBytes(Paths.get(jarOutputPath));
                     zipOut.write(jarBytes, 0, jarBytes.length);
                     zipOut.closeEntry();
                     java.util.zip.ZipEntry srcEntry = new java.util.zip.ZipEntry(expectedFileName);
@@ -135,8 +153,8 @@ public class DynamicJarBuilder {
                     zipOut.write(Files.readAllBytes(expectedFilePath));
                     zipOut.closeEntry();
                 }
-                System.out.println("[LOG] ZIP created: " + zipFileName);
-                return jarFileName;
+                System.out.println("[LOG] ZIP created: " + zipOutputPath);
+                return jarOutputPath;
             }
         } catch (IOException e) {
             e.printStackTrace();
