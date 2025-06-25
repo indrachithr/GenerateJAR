@@ -1,4 +1,4 @@
-# CobolToJAVA Java Library
+# Compile and generate JAR Java Library
 
 This project provides a Java utility to compile and package arbitrary `.java` files into executable JARs and ZIPs, as well as simple add/subtract operations. It is self-contained and does not require any native DLLs.
 
