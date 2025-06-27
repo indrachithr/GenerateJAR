@@ -86,25 +86,28 @@ public class DynamicJarBuilder {
                 String originalCode = new String(Files.readAllBytes(file.toPath()));
                 String cleanedCode = originalCode.replace("\\", "");
                 // Extract public class name
-                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("public\\s+class\\s+([A-Za-z_][A-ZaZ0-9_]*)").matcher(cleanedCode);
+                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("public\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)").matcher(cleanedCode);
+                String extractedClassName = null;
                 if (matcher.find()) {
-                    className = matcher.group(1);
+                    extractedClassName = matcher.group(1);
                 } else {
-                    className = file.getName().substring(0, file.getName().length() - 5);
+                    // fallback: use file name without .java extension
+                    extractedClassName = file.getName().replaceFirst("\\.java$", "");
                 }
+                className = extractedClassName;
                 classFolder = outputDir + File.separator + className;
                 classDirFile = new java.io.File(classFolder);
                 if (!classDirFile.exists()) classDirFile.mkdirs();
                 String expectedFileName = className + ".java";
                 Path expectedFilePath = parentDir == null ? Paths.get(expectedFileName) : Paths.get(parentDir, expectedFileName);
                 if (!file.getName().equals(expectedFileName)) {
-                    Files.write(expectedFilePath, cleanedCode.getBytes());
-                    Files.delete(file.toPath());
+                    // Rename the file to match the extracted class name
+                    Files.move(file.toPath(), expectedFilePath, StandardCopyOption.REPLACE_EXISTING);
                     file = expectedFilePath.toFile();
                     javaFilePath = expectedFilePath.toString();
-                } else {
-                    Files.write(file.toPath(), cleanedCode.getBytes());
                 }
+                // Always write the cleaned code to the file
+                Files.write(file.toPath(), cleanedCode.getBytes());
                 // Try to compile again after renaming/formatting
                 errorStream = new ByteArrayOutputStream();
                 result = compiler.run(null, null, errorStream, "-d", parentDir, file.getAbsolutePath());

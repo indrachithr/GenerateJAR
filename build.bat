@@ -20,7 +20,7 @@ set JAVA_OUT_DIR=%OUT%
 REM Compile all Java source files
 javac -d %OUT% %SRC%\com\example\dll\util\*.java %SRC%\com\example\dll\*.java
 if errorlevel 1 (
-    echo Compilation failed. Please check the error messages above.
+    echo Compilation failed.
     exit /b 1
 )
 
