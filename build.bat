@@ -7,7 +7,11 @@ set SCRIPT_DIR=%~dp0
 cd /d "%SCRIPT_DIR%"
 
 set SRC=src\main\java
-set OUT=out
+
+REM Prompt user for OUT directory or use default
+set OUT=
+set /p OUT=Enter the output directory for compiled classes (default: out): 
+if "%OUT%"=="" set OUT=out
 if not exist %OUT% mkdir %OUT%
 
 REM Compile all Java source files
@@ -19,14 +23,14 @@ if errorlevel 1 (
 
 REM Run the main Java service if argument is provided
 if not "%1"=="" (
-    java -cp %OUT%;. com.example.dll.JavaCodeToJarService %1
+    java -cp "%OUT%;." com.example.dll.JavaCodeToJarService %1
     goto :eof
 )
 
 REM Run the main Java service with a prompt if no argument is provided
 set /p JAVA_FILE=Enter the path to a .java file to process (or leave blank to exit): 
 if not "%JAVA_FILE%"=="" (
-    java -cp %OUT%;. com.example.dll.JavaCodeToJarService "%JAVA_FILE%"
+    java -cp "%OUT%;." com.example.dll.JavaCodeToJarService "%JAVA_FILE%"
     goto :eof
 )
 
