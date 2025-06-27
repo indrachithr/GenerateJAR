@@ -14,6 +14,9 @@ set /p OUT=Enter the output directory for compiled classes (default: out):
 if "%OUT%"=="" set OUT=out
 if not exist %OUT% mkdir %OUT%
 
+REM Set JAVA_OUT_DIR environment variable for Java output location
+set JAVA_OUT_DIR=%OUT%
+
 REM Compile all Java source files
 javac -d %OUT% %SRC%\com\example\dll\util\*.java %SRC%\com\example\dll\*.java
 if errorlevel 1 (

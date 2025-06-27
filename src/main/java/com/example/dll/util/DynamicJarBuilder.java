@@ -27,22 +27,31 @@ public class DynamicJarBuilder {
             if (parentDir == null) parentDir = new java.io.File(".").getAbsolutePath();
             else parentDir = new java.io.File(parentDir).getAbsolutePath();
             System.out.println("[LOG2] Using parentDir: " + parentDir);
+            // Get output directory from environment variable if set
+            String outputDir = System.getenv("JAVA_OUT_DIR");
+            if (outputDir == null || outputDir.isEmpty()) {
+                outputDir = parentDir;
+            }
+            // Create a subfolder named after the class (without extension)
+            String fileName = file.getName();
+            String className = fileName.substring(0, fileName.length() - 5); // remove .java
+            String classFolder = outputDir + File.separator + className;
+            java.io.File classDirFile = new java.io.File(classFolder);
+            if (!classDirFile.exists()) classDirFile.mkdirs();
             ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
             int result = compiler.run(null, null, errorStream, "-d", parentDir, file.getAbsolutePath());
             if (result == 0) {
                 // Compilation succeeded, proceed as normal
-                String fileName = file.getName();
-                String className = fileName.substring(0, fileName.length() - 5); // remove .java
                 String classFileName = className + ".class";
                 String classFilePath = parentDir + File.separator + classFileName;
                 String jarFileName = className + ".jar";
-                System.out.println("[LOG] Compilation successful: " + classFileName);
+                String jarOutputPath = classFolder + File.separator + jarFileName;
                 // Create manifest with Main-Class
                 Manifest manifest = new Manifest();
                 manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, className);
                 // Create JAR file with manifest, including only .class file
-                try (JarOutputStream target = new JarOutputStream(new FileOutputStream(jarFileName), manifest)) {
+                try (JarOutputStream target = new JarOutputStream(new FileOutputStream(jarOutputPath), manifest)) {
                     // Add .class file at root
                     JarEntry classEntry = new JarEntry(classFileName);
                     classEntry.setTime(System.currentTimeMillis());
@@ -51,20 +60,12 @@ public class DynamicJarBuilder {
                     target.write(classBytes, 0, classBytes.length);
                     target.closeEntry();
                 }
-                System.out.println("[LOG] JAR created: " + jarFileName);
-                // Save the JAR file to a fixed output directory (e.g., user's home directory)
-                String userHome = System.getProperty("user.home");
-                String outputDir = userHome + File.separator + "GeneratedJars";
-                java.io.File outDirFile = new java.io.File(outputDir);
-                if (!outDirFile.exists()) outDirFile.mkdirs();
-                String jarOutputPath = outputDir + File.separator + jarFileName;
-                Files.move(Paths.get(jarFileName), Paths.get(jarOutputPath), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("[LOG] JAR saved to: " + jarOutputPath);
+                System.out.println("[LOG] JAR created: " + jarOutputPath);
                 // Clean up .class file after packaging
                 Files.deleteIfExists(Paths.get(classFilePath));
-                // Add .jar file to a zip archive in the same output directory
+                // Add .jar file to a zip archive in the same class-named directory
                 String zipFileName = className + ".zip";
-                String zipOutputPath = outputDir + File.separator + zipFileName;
+                String zipOutputPath = classFolder + File.separator + zipFileName;
                 try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipOutputPath))) {
                     // Add .jar file
                     java.util.zip.ZipEntry jarEntry = new java.util.zip.ZipEntry(jarFileName);
@@ -85,13 +86,15 @@ public class DynamicJarBuilder {
                 String originalCode = new String(Files.readAllBytes(file.toPath()));
                 String cleanedCode = originalCode.replace("\\", "");
                 // Extract public class name
-                String className = null;
-                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("public\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)").matcher(cleanedCode);
+                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("public\\s+class\\s+([A-Za-z_][A-ZaZ0-9_]*)").matcher(cleanedCode);
                 if (matcher.find()) {
                     className = matcher.group(1);
                 } else {
                     className = file.getName().substring(0, file.getName().length() - 5);
                 }
+                classFolder = outputDir + File.separator + className;
+                classDirFile = new java.io.File(classFolder);
+                if (!classDirFile.exists()) classDirFile.mkdirs();
                 String expectedFileName = className + ".java";
                 Path expectedFilePath = parentDir == null ? Paths.get(expectedFileName) : Paths.get(parentDir, expectedFileName);
                 if (!file.getName().equals(expectedFileName)) {
@@ -115,14 +118,11 @@ public class DynamicJarBuilder {
                 String classFileName = className + ".class";
                 String classFilePath = parentDir + File.separator + classFileName;
                 String jarFileName = className + ".jar";
-                System.out.println("[LOG] Compilation successful after formatting: " + classFileName);
-                // Create manifest with Main-Class
+                String jarOutputPath = classFolder + File.separator + jarFileName;
                 Manifest manifest = new Manifest();
                 manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, className);
-                // Create JAR file with manifest, including only .class file
-                try (JarOutputStream target = new JarOutputStream(new FileOutputStream(jarFileName), manifest)) {
-                    // Add .class file at root
+                try (JarOutputStream target = new JarOutputStream(new FileOutputStream(jarOutputPath), manifest)) {
                     JarEntry classEntry = new JarEntry(classFileName);
                     classEntry.setTime(System.currentTimeMillis());
                     target.putNextEntry(classEntry);
@@ -130,18 +130,10 @@ public class DynamicJarBuilder {
                     target.write(classBytes, 0, classBytes.length);
                     target.closeEntry();
                 }
-                System.out.println("[LOG] JAR created: " + jarFileName);
-                // Save the JAR file to a fixed output directory (e.g., user's home directory)
-                String userHome = System.getProperty("user.home");
-                String outputDir = userHome + File.separator + "GeneratedJars";
-                java.io.File outDirFile = new java.io.File(outputDir);
-                if (!outDirFile.exists()) outDirFile.mkdirs();
-                String jarOutputPath = outputDir + File.separator + jarFileName;
-                Files.move(Paths.get(jarFileName), Paths.get(jarOutputPath), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("[LOG] JAR saved to: " + jarOutputPath);
+                System.out.println("[LOG] JAR created: " + jarOutputPath);
                 Files.deleteIfExists(Paths.get(classFilePath));
                 String zipFileName = className + ".zip";
-                String zipOutputPath = outputDir + File.separator + zipFileName;
+                String zipOutputPath = classFolder + File.separator + zipFileName;
                 try (java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipOutputPath))) {
                     java.util.zip.ZipEntry jarEntry = new java.util.zip.ZipEntry(jarFileName);
                     zipOut.putNextEntry(jarEntry);
